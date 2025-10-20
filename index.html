@@ -17,6 +17,8 @@
         --muted-text: #aaaaaa;
         --bar-bg: #444444;
         --bar-fill: #f4f4f4;
+        --accent: #e8a83b;
+        --accent-dark: #bb811d;
       }
 
       * {
@@ -53,13 +55,12 @@
         width: 90%;
         max-width: 600px;
         padding: 2rem 1.5rem;
-        border-radius: 12px;
+        border-radius: 16px;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         text-align: center;
         backdrop-filter: blur(9px) saturate(167%);
         -webkit-backdrop-filter: blur(9px) saturate(167%);
         background-color: rgba(18, 40, 17, 0.159);
-        border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.125);
       }
 
@@ -77,20 +78,23 @@
       }
 
       #startButton {
-        background-color: var(--bar-fill);
+        background-color: var(--accent);
         color: var(--bg-color);
         border: none;
         padding: 12px 24px;
-        border-radius: 8px;
+        border-radius: 12px;
         font-size: 1rem;
         font-weight: 700;
         cursor: pointer;
         transition: background-color 0.2s ease, transform 0.1s ease;
         margin-bottom: 1.5rem;
+        transition: box-shadow 200ms ease-in;
+        box-shadow: inset 0px -5px 0px var(--accent-dark);
+        outline: 2px solid var(--accent-dark);
       }
 
       #startButton:hover {
-        background-color: #cccccc;
+        box-shadow: inset 0px 0px 0px var(--accent-dark);
       }
 
       #startButton:active {
@@ -102,7 +106,7 @@
         height: 24px;
         background-color: var(--bar-bg);
         border-radius: 12px;
-        overflow: hidden;
+
         /* Removes the blue flash on tap (iOS/Android) */
         -webkit-tap-highlight-color: transparent;
       }
@@ -110,9 +114,11 @@
       #volumeBar {
         height: 100%;
         width: 50%; /* Initial starting point */
-        background-color: var(--bar-fill);
+        background-color: var(--accent);
         border-radius: 12px;
         transition: width 0.05s linear;
+        box-shadow: 0px 0px 80px var(--accent-dark), 0px 0px 10px var(--accent),
+          inset 0px 0px 0px 2px var(--accent-dark);
       }
     </style>
   </head>
