@@ -3,187 +3,245 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Annoying Sound Slider</title>
+    <title>Annoying Volume Slider</title>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+      /* --- Styles --- */
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+      :root {
+        --bg-color: #111111;
+        --container-bg: #222222;
+        --text-color: #f4f4f4;
+        --muted-text: #aaaaaa;
+        --bar-bg: #444444;
+        --bar-fill: #f4f4f4;
+      }
 
-      body {
+      * {
+        box-sizing: border-box;
         margin: 0;
-        height: 100vh;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: #121212;
-        color: #fff;
-        font-family: "Poppins", sans-serif;
-        user-select: none;
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10+ */
+        user-select: none; /* Standard */
       }
 
-      .container {
-        background: #1e1e1e;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: inset 6px 6px 12px #0d0d0d, inset -6px -6px 12px #2b2b2b;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-      }
-
-      h1 {
-        font-weight: 600;
-        margin-bottom: 10px;
-      }
-
-      iframe {
+      #app-container {
+        width: 90%;
+        max-width: 400px;
+        background-color: var(--container-bg);
+        padding: 2rem 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        
+        font-size: 1.5rem;
+        &h2 {
+          font-size: 1rem;
+        }
+        &p {
+          font-size: 1rem;
+        }
       }
 
-      .slider-container {
-        width: 300px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+      h2 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
       }
 
-      input[type="range"] {
-        width: 100%;
-        -webkit-appearance: none;
-        background: #222;
-        height: 10px;
-        border-radius: 5px;
-        outline: none;
-        box-shadow: inset 2px 2px 5px #0d0d0d, inset -2px -2px 5px #2a2a2a;
+      #instructions {
+        color: var(--muted-text);
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.4;
       }
 
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: cyan;
-        box-shadow: 0 0 10px cyan, 0 0 20px cyan;
+      #startButton {
+        background-color: var(--bar-fill);
+        color: var(--bg-color);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 700;
         cursor: pointer;
-        transition: transform 0.1s ease;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        margin-bottom: 1.5rem;
       }
 
-      input[type="range"]::-webkit-slider-thumb:active {
-        transform: scale(1.2);
+      #startButton:hover {
+        background-color: #cccccc;
       }
 
-      .hint {
-        font-size: 14px;
-        opacity: 0.7;
-        margin-top: 10px;
+      #startButton:active {
+        transform: scale(0.98);
       }
 
-      .shake {
-        animation: shake 0.2s ease;
+      #volumeContainer {
+        width: 100%;
+        height: 24px;
+        background-color: var(--bar-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent; /* Remove blue flash on tap */
       }
 
-      @keyframes shake {
-        0% {
-          transform: translateX(0);
-        }
-        25% {
-          transform: translateX(-3px);
-        }
-        50% {
-          transform: translateX(3px);
-        }
-        75% {
-          transform: translateX(-3px);
-        }
-        100% {
-          transform: translateX(0);
-        }
+      #volumeBar {
+        height: 100%;
+        width: 50%; /* Initial starting point */
+        background-color: var(--bar-fill);
+        border-radius: 12px;
+        /* The transition makes the drop smooth and the increase instant */
+        transition: width 0.05s linear;
       }
     </style>
   </head>
   <body>
-    <div class="container" id="card">
-      <h1>Annoying Sound Slider</h1>
+    <div id="app-container">
+      <h2>The Annoying Player</h2>
+      <p id="instructions">
+        After starting, the volume will constantly drop.
+        <br />
+        <strong>Keep tapping the Spacebar or the screen</strong> to keep the
+        volume up!
+      </p>
 
-      <!-- 🔊 Your YouTube Video -->
-      <div id="player"></div>
+      <button id="startButton">Start Audio</button>
 
-      <div class="slider-container">
-        <input type="range" id="volume" min="0" max="100" step="1" value="0" />
-        <div class="hint">Tap SPACE to increase volume. Stop to fade out.</div>
+      <div id="volumeContainer">
+        <div id="volumeBar"></div>
       </div>
     </div>
 
+    <audio id="audioPlayer" src="./audio.mp3" loop>
+      <source type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+
     <script>
-      let player;
-      let volume = 0;
-      let lastSpacePress = 0;
-      let isHolding = false;
-      const slider = document.getElementById("volume");
-      const card = document.getElementById("card");
+      // --- Element Selection ---
+      const audioPlayer = document.getElementById("audioPlayer");
+      const startButton = document.getElementById("startButton");
+      const volumeBar = document.getElementById("volumeBar");
+      const instructions = document.getElementById("instructions");
 
-      // Load YouTube IFrame API
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
+      // --- Game State ---
+      let currentVolume = 0.5; // Start at 50%
+      let isPlaying = false;
+      let decreaseInterval = null;
 
-      // Initialize the YouTube player
-      function onYouTubeIframeAPIReady() {
-        player = new YT.Player("player", {
-          height: "315",
-          width: "560",
-          videoId: "jpQ8dRHMiHk",
-          playerVars: {
-            autoplay: 1,
-            controls: 0,
-            loop: 1,
-            playlist: "jpQ8dRHMiHk",
-            mute: 0,
-            origin: window.location.origin,
-          },
-          events: {
-            onReady: () => {
-              player.setVolume(0);
-              player.playVideo();
-            },
-          },
-        });
-      }
+      // --- Constants ---
+      const DECREASE_RATE = 0.0075; // How much volume drops per tick
+      const INCREASE_AMOUNT = 0.05; // How much volume jumps on tap
+      const INTERVAL_TIME = 25; // How fast the volume drops (in ms)
 
-      // Smooth fade down
-      setInterval(() => {
-        if (!isHolding && volume > 0) {
-          volume = Math.max(0, volume - 20);
-          updateVolume();
-        }
-      }, 100);
+      // --- Functions ---
 
+      /**
+       * Updates both the audio element's volume and the visual bar's width.
+       */
       function updateVolume() {
-        slider.value = volume;
-        if (player && player.setVolume) {
-          player.setVolume(volume);
-        }
+        // Ensure volume is within bounds (0.0 to 1.0)
+        if (currentVolume > 1) currentVolume = 1;
+        if (currentVolume < 0) currentVolume = 0;
+
+        audioPlayer.volume = currentVolume;
+        volumeBar.style.width = `${currentVolume * 100}%`;
       }
 
-      // Handle spacebar tap
-      window.addEventListener("keydown", (e) => {
-        if (e.code === "Space" && Date.now() - lastSpacePress > 200) {
-          lastSpacePress = Date.now();
-          isHolding = true;
-          volume = Math.min(100, volume + 5);
-          updateVolume();
+      /**
+       * Starts the audio playback and the volume decrease loop.
+       */
+      function startAudio() {
+        if (isPlaying) return; // Don't run twice
 
-          // Shake feedback
-          // card.classList.add("shake");
-          // setTimeout(() => card.classList.remove("shake"), 200);
+        // Check if audio src is empty
+        if (
+          !audioPlayer.src ||
+          audioPlayer.src.endsWith(window.location.pathname)
+        ) {
+          instructions.innerHTML =
+            "<strong>Error:</strong> Please add an audio file path to the <code>src</code> attribute in the HTML.";
+          instructions.style.color = "#ff6b6b";
+          return;
+        }
+
+        isPlaying = true;
+        audioPlayer.volume = currentVolume; // Set initial volume
+
+        audioPlayer.play().catch((error) => {
+          // Handle autoplay policy errors
+          console.error("Audio playback error:", error);
+          instructions.innerHTML =
+            "Playback failed. Please interact with the document first (this is a browser policy). Try refreshing and clicking 'Start' again.";
+          instructions.style.color = "#ff6b6b";
+          isPlaying = false;
+        });
+
+        // Hide button and start the "game"
+        startButton.style.display = "none";
+        instructions.textContent = "Keep tapping to listen!";
+
+        // Start the volume decrease loop
+        decreaseInterval = setInterval(() => {
+          currentVolume -= DECREASE_RATE;
+          updateVolume();
+        }, INTERVAL_TIME);
+      }
+
+      /**
+       * Increases the volume when the user interacts.
+       */
+      function boostVolume() {
+        if (!isPlaying) return; // Only boost if the game has started
+
+        currentVolume += INCREASE_AMOUNT;
+        updateVolume();
+      }
+
+      // --- Event Listeners ---
+
+      // 1. Start Button
+      startButton.addEventListener("click", startAudio);
+
+      // 2. Spacebar press
+      document.addEventListener("keydown", (event) => {
+        if (event.code === "Space") {
+          event.preventDefault(); // Stop page from scrolling
+          boostVolume();
         }
       });
 
-      window.addEventListener("keyup", (e) => {
-        if (e.code === "Space") isHolding = false;
+      // 3. Mouse click
+      document.addEventListener("mousedown", (event) => {
+        // Don't boost if the user is clicking the (now hidden) button area
+        if (event.target !== startButton) {
+          boostVolume();
+        }
       });
+
+      // 4. Touch screen tap
+      document.addEventListener(
+        "touchstart",
+        (event) => {
+          event.preventDefault(); // Stop zoom/pan on mobile
+          if (event.target !== startButton) {
+            boostVolume();
+          }
+        },
+        { passive: false }
+      ); // Need passive:false to allow preventDefault
     </script>
   </body>
 </html>
