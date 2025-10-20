@@ -2,11 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <title>Annoying Volume Slider</title>
     <style>
       /* --- Styles --- */
-      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+
       :root {
         --bg-color: #111111;
         --container-bg: #222222;
@@ -25,16 +28,21 @@
       html,
       body {
         height: 100%;
-        font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont,
-          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        width: 100%;
+        overflow: hidden; /* Prevents bouncing on mobile */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
         background-color: var(--bg-color);
         color: var(--text-color);
         display: flex;
         align-items: center;
         justify-content: center;
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10+ */
-        user-select: none; /* Standard */
+        /* Prevents text selection while tapping */
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        /* Prevents callout menu on iOS */
+        -webkit-touch-callout: none;
       }
 
       #app-container {
@@ -45,14 +53,6 @@
         border-radius: 12px;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         text-align: center;
-        
-        font-size: 1.5rem;
-        &h2 {
-          font-size: 1rem;
-        }
-        &p {
-          font-size: 1rem;
-        }
       }
 
       h2 {
@@ -65,6 +65,7 @@
         font-size: 0.9rem;
         margin-bottom: 1.5rem;
         line-height: 1.4;
+        min-height: 40px; /* Prevents layout jump */
       }
 
       #startButton {
@@ -94,7 +95,8 @@
         background-color: var(--bar-bg);
         border-radius: 12px;
         overflow: hidden;
-        -webkit-tap-highlight-color: transparent; /* Remove blue flash on tap */
+        /* Removes the blue flash on tap (iOS/Android) */
+        -webkit-tap-highlight-color: transparent;
       }
 
       #volumeBar {
@@ -102,7 +104,6 @@
         width: 50%; /* Initial starting point */
         background-color: var(--bar-fill);
         border-radius: 12px;
-        /* The transition makes the drop smooth and the increase instant */
         transition: width 0.05s linear;
       }
     </style>
@@ -124,8 +125,8 @@
       </div>
     </div>
 
-    <audio id="audioPlayer" src="./audio.mp3" loop>
-      <source type="audio/mpeg" />
+    <audio id="audioPlayer" loop playsinline>
+      <source src="./audio.mp3" type="audio/mpeg" />
       Your browser does not support the audio element.
     </audio>
 
@@ -138,7 +139,6 @@
 
       // --- Game State ---
       let currentVolume = 0.5; // Start at 50%
-      let isPlaying = false;
       let decreaseInterval = null;
 
       // --- Constants ---
@@ -161,87 +161,102 @@
       }
 
       /**
-       * Starts the audio playback and the volume decrease loop.
-       */
-      function startAudio() {
-        if (isPlaying) return; // Don't run twice
-
-        // Check if audio src is empty
-        if (
-          !audioPlayer.src ||
-          audioPlayer.src.endsWith(window.location.pathname)
-        ) {
-          instructions.innerHTML =
-            "<strong>Error:</strong> Please add an audio file path to the <code>src</code> attribute in the HTML.";
-          instructions.style.color = "#ff6b6b";
-          return;
-        }
-
-        isPlaying = true;
-        audioPlayer.volume = currentVolume; // Set initial volume
-
-        audioPlayer.play().catch((error) => {
-          // Handle autoplay policy errors
-          console.error("Audio playback error:", error);
-          instructions.innerHTML =
-            "Playback failed. Please interact with the document first (this is a browser policy). Try refreshing and clicking 'Start' again.";
-          instructions.style.color = "#ff6b6b";
-          isPlaying = false;
-        });
-
-        // Hide button and start the "game"
-        startButton.style.display = "none";
-        instructions.textContent = "Keep tapping to listen!";
-
-        // Start the volume decrease loop
-        decreaseInterval = setInterval(() => {
-          currentVolume -= DECREASE_RATE;
-          updateVolume();
-        }, INTERVAL_TIME);
-      }
-
-      /**
-       * Increases the volume when the user interacts.
+       * Increases the volume.
        */
       function boostVolume() {
-        if (!isPlaying) return; // Only boost if the game has started
-
         currentVolume += INCREASE_AMOUNT;
         updateVolume();
       }
 
-      // --- Event Listeners ---
+      /**
+       * Handles all user interactions (tap, click, spacebar)
+       * *after* the game has started.
+       */
+      function handleInteraction(event) {
+        // Check for spacebar
+        if (event.type === "keydown" && event.code !== "Space") {
+          return;
+        }
 
-      // 1. Start Button
+        // Prevent default behavior:
+        // - Spacebar: scrolling
+        // - Touch: zooming, scrolling, callout menus
+        event.preventDefault();
+
+        boostVolume();
+      }
+
+      /**
+       * Starts the audio playback and the volume decrease loop.
+       */
+      function startAudio() {
+        // Check if audio src is empty
+        const audioSource = audioPlayer.getElementsByTagName("source")[0];
+        if (
+          !audioSource ||
+          !audioSource.src ||
+          audioSource.src.endsWith(window.location.pathname) ||
+          audioSource.src === window.location.href
+        ) {
+          instructions.innerHTML =
+            "<strong>Error:</strong> Please add an audio file path to the <code>src</code> attribute in the HTML's <code>&lt;source&gt;</code> tag.";
+          instructions.style.color = "#ff6b6b";
+          return;
+        }
+
+        // Set initial volume before playing
+        audioPlayer.volume = currentVolume;
+
+        // Try to play audio
+        const playPromise = audioPlayer.play();
+
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              // --- SUCCESS ---
+              // Audio is playing. Now we can start the game.
+
+              // Hide button and update text
+              startButton.style.display = "none";
+              instructions.textContent = "Keep tapping to listen!";
+
+              // Start the volume decrease loop
+              decreaseInterval = setInterval(() => {
+                currentVolume -= DECREASE_RATE;
+                updateVolume();
+              }, INTERVAL_TIME);
+
+              // --- Add interaction listeners NOW ---
+              // These listeners are only active *after* the audio starts.
+              document.addEventListener("keydown", handleInteraction);
+
+              // Add touch listener to the whole body
+              document.body.addEventListener("touchstart", handleInteraction, {
+                passive: false,
+              });
+
+              // Add mousedown for desktop clicks
+              document.body.addEventListener("mousedown", handleInteraction);
+            })
+            .catch((error) => {
+              // --- FAILURE ---
+              // This often happens on mobile if not triggered by a direct user tap.
+              console.error("Audio playback error:", error);
+              instructions.innerHTML =
+                "Playback failed. Your browser might be blocking it. Please tap 'Start' again.";
+              instructions.style.color = "#ff6b6b";
+            });
+        }
+      }
+
+      // --- Main Event Listener ---
+      // Only the start button is listening at the beginning.
+      // We use 'touchstart' as well for mobile responsiveness on the button.
       startButton.addEventListener("click", startAudio);
-
-      // 2. Spacebar press
-      document.addEventListener("keydown", (event) => {
-        if (event.code === "Space") {
-          event.preventDefault(); // Stop page from scrolling
-          boostVolume();
-        }
+      startButton.addEventListener("touchstart", (e) => {
+        e.preventDefault(); // prevent "ghost click"
+        startAudio();
       });
-
-      // 3. Mouse click
-      document.addEventListener("mousedown", (event) => {
-        // Don't boost if the user is clicking the (now hidden) button area
-        if (event.target !== startButton) {
-          boostVolume();
-        }
-      });
-
-      // 4. Touch screen tap
-      document.addEventListener(
-        "touchstart",
-        (event) => {
-          event.preventDefault(); // Stop zoom/pan on mobile
-          if (event.target !== startButton) {
-            boostVolume();
-          }
-        },
-        { passive: false }
-      ); // Need passive:false to allow preventDefault
     </script>
   </body>
 </html>
